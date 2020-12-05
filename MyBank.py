@@ -31,8 +31,8 @@ def Other_Transactions_Function():
 def Database_Update():
     database = connector.connect(host="localhost", user="root",password = "", database = "mybank_register")
     cursor = database.cursor()
-    query = "INSERT INTO users(First_Name, Middle_Name, Last_Name, Username, Email, Password) VALUES (%s, %s, %s, %s, %s, %s)"
-    values = (First_Name, Middle_Name, Last_Name, Username, Email, Password)
+    query = "INSERT INTO users(First_Name, Middle_Name, Last_Name, Username, Email, Phone_Number, Password) VALUES (%s, %s, %s, %s, %s, %s, %s)"
+    values = (First_Name, Middle_Name, Last_Name, Username, Email, Phone_Number, Password)
     cursor.execute(query, values)
     database.commit()
 
@@ -186,7 +186,70 @@ def Deposit_Function():
     database.commit()
 
     Other_Transactions_Function()
-    
+
+def Airtime_Top_Up_Function():
+    database = connector.connect(host="localhost", user="root",password = "", database = "mybank_register")
+    cursor = database.cursor()
+    print("Welcome to MyBANK Airtime Top-Up")
+    print("""Please select a biller:
+    1. MTN
+    2. GLO
+    3. 9mobile
+    4. Airtel""")
+    biller_selection = input("Select option: ")
+    if biller_selection == "1" or "2" or "3" or "4":
+        print("""Who are you recharging for?
+    1. Self
+    2. 3rd Party""")
+        receiver_option = input("Select Option: ")
+        if receiver_option == "1":
+            query = "SELECT Phone_Number FROM users WHERE Username = %s and User_ID = %s"
+            values = (Log_In_Username, User_ID)
+            cursor.execute(query, values)
+            number = cursor.fetchone()
+            user_phone_number = number[0]
+            airtime_amount = input("How much airtime would you like to purchase? ")
+            if int(airtime_amount) < 100:
+                print("The least amount you can purchase is #100. Please try again.")
+                Airtime_Top_Up_Function()
+            else:
+                query = "SELECT Balance FROM users WHERE User_ID = %s and Username = %s"
+                values = (User_ID, Log_In_Username)
+                cursor.execute(query, values)
+                the_balance = cursor.fetchone()
+                current_balance = the_balance[0]
+                if int(current_balance) > int(airtime_amount):
+                    Balance_Update = int(current_balance) - int(airtime_amount)
+                    query =  "UPDATE users SET Balance = %s WHERE User_ID = %s and Username = %s"
+                    values = (Balance_Update, User_ID, Log_In_Username)
+                    cursor.execute(query, values)
+                    database.commit()
+
+                    print("Your serice provider with phone number " + str(user_phone_number) + " has successfully been credited with " + str(airtime_amount) + " Thank you for using this service.")
+                    Other_Transactions_Function()
+        elif receiver_option == "2":
+            receivers_phone_number = input("Enter the receiver's phone number: ")
+            if len(receivers_phone_number) >= 11:
+                airtime_amount = input("How much airtime will you like to send? ")
+            if int(airtime_amount) < 100:
+                print("The least amount you can purchase is #100. Please try again.")
+                Airtime_Top_Up_Function()
+            else:
+                query = "SELECT Balance FROM users WHERE User_ID = %s and Username = %s"
+                values = (User_ID, Log_In_Username)
+                cursor.execute(query, values)
+                the_balance = cursor.fetchone()
+                current_balance = the_balance[0]
+                if int(current_balance) > int(airtime_amount):
+                    Balance_Update = int(current_balance) - int(airtime_amount)
+                    query =  "UPDATE users SET Balance = %s WHERE User_ID = %s and Username = %s"
+                    values = (Balance_Update, User_ID, Log_In_Username)
+                    cursor.execute(query, values)
+                    database.commit()
+
+                    print("You have successfully credited a third party serice provider with phone number " + str(receivers_phone_number) + " with an amount of " + str(airtime_amount) + " Thank you for using this service.")
+                    Other_Transactions_Function()
+
 def Balance_Inquiry_Function():
     database = connector.connect(host="localhost", user="root",password = "", database = "mybank_register")
     cursor = database.cursor()
@@ -200,25 +263,93 @@ def Balance_Inquiry_Function():
     print(str(first_name) + ", You have " + str(Balance) + " left in your account.")
     Other_Transactions_Function()
 
-def Change_Pin_Function():
-    previous_password = input("Enter your current password: ")
-
-    if previous_password == Log_In_Password:
-        new_password = input("Enter your new password: ")
-        confirm_new_password = input("Confirm your new password: ")
-        if new_password == confirm_new_password:
-            database = connector.connect(host="localhost", user="root",password = "", database = "mybank_register")
-            cursor = database.cursor()
-            query = "UPDATE users SET Password = %s WHERE User_ID = %s and Username = %s"
-            values = (new_password, User_ID, Log_In_Username)
+def Update_Bank_Information_Function():
+    database = connector.connect(host="localhost", user="root",password = "", database = "mybank_register")
+    cursor = database.cursor()
+    update_option = input("""What would you like to update?
+    1. Name
+    2. Email
+    3. Password
+    4. Phone Number""")
+    
+    if update_option == "1":
+        print("""
+    1. First Name
+    2. Middle Name
+    3. Last Name
+    4. Username""")
+        name_to_update = input("Update: ")
+        if name_to_update == "1":
+            new_first_name = input("Update First Name to: ")
+            query = "UPDATE users SET First_Name = %s WHERE User_ID = %s and Username = %s"
+            values = (new_first_name, User_ID, Log_In_Username)
             cursor.execute(query, values)
             database.commit()
-
-            print("You have successfully changed your password. Your new password is " + new_password)
+            print("You have succefully updated your first name.")
             Other_Transactions_Function()
-        else:
-            print("Your passwords don't match. Try again.")
-            Change_Pin_Function()
+
+        elif name_to_update == "2":
+            new_middle_name = input("Update Middle Name to: ")
+            query = "UPDATE users SET Middle_Name = %s WHERE User_ID = %s and Username = %s"
+            values = (new_middle_name, User_ID, Log_In_Username)
+            cursor.execute(query, values)
+            database.commit()
+            print("You have succefully updated your middle name.")
+            Other_Transactions_Function()
+
+        elif name_to_update == "3":
+            new_last_name = input("Update Last Name to: ")
+            query = "UPDATE users SET Last_Name = %s WHERE User_ID = %s and Username = %s"
+            values = (new_last_name, User_ID, Log_In_Username)
+            cursor.execute(query, values)
+            database.commit()
+            print("You have successfully updated your last name.")
+            Other_Transactions_Function()
+
+        elif name_to_update == "4":
+            new_username = input("Update Username to: ")
+            query = "UPDATE users SET Username = %s WHERE User_ID = %s and Username = %s"
+            values = (new_username, User_ID, Log_In_Username)
+            cursor.execute(query, values)
+            database.commit()
+            print("You have successfully updated your username. Your new username is " + new_username)
+            Other_Transactions_Function()
+
+    elif update_option == "2":
+        new_email = input("Enter new email: ")
+        query = "UPDATE users SET Email = %s WHERE User_ID = %s and Username = %s"
+        values = (new_email, User_ID, Log_In_Username)
+        cursor.execute(query, values)
+        database.commit()
+        print("You have successfully update your Email. Your new Email is " + new_email)
+        Other_Transactions_Function()
+
+    elif update_option == "3": 
+        previous_password = input("Enter your current password: ")
+        if previous_password == Log_In_Password:
+            new_password = input("Enter your new password: ")
+            confirm_new_password = input("Confirm your new password: ")
+            if new_password == confirm_new_password:
+                query = "UPDATE users SET Password = %s WHERE User_ID = %s and Username = %s"
+                values = (new_password, User_ID, Log_In_Username)
+                cursor.execute(query, values)
+                database.commit()
+
+                print("You have successfully changed your password. Your new password is " + new_password)
+                Other_Transactions_Function()
+            else:
+                print("Your passwords don't match. Try again.")
+                Update_Bank_Information_Function()
+        
+    elif update_option == "4":
+        new_phone_number = input("Enter a new phone number: ")
+        new_phone_number_confirmation = input("Confirm your new phone number: ")
+        if new_phone_number == new_phone_number_confirmation:
+            query = "UPDATE users SET Phone_Number = %s WHERE User_ID = %s and Username = %s"
+            values = (new_phone_number, User_ID, Log_In_Username)
+            cursor.execute(query, values)
+            database.commit() 
+            print("You have successfully updated your phone number. Your new phone number is " + new_phone_number)
 
 def Transactions():
     database = connector.connect(host="localhost", user="root",password = "", database = "mybank_register")
@@ -235,7 +366,7 @@ def Transactions():
     3. Deposit Cash
     4. Airtime Top-Up
     5. Check Balance
-    6. Change PIN""") 
+    6. Update Bank Information""") 
     transaction_selection = input("Select Option: ")
     if transaction_selection == "1":
         Withdrawal_Function()
@@ -243,10 +374,12 @@ def Transactions():
         Transfer_Function()
     elif transaction_selection == "3":
         Deposit_Function()
+    elif transaction_selection == "4":
+        Airtime_Top_Up_Function()
     elif transaction_selection == "5":
         Balance_Inquiry_Function()
     elif transaction_selection == "6":
-        Change_Pin_Function()
+        Update_Bank_Information_Function()
 
 def New_Account_Function():
     global First_Name
@@ -254,11 +387,13 @@ def New_Account_Function():
     global Last_Name
     global Username
     global Email
+    global Phone_Number
     First_Name = input("Enter your First Name: ")
     Middle_Name = input("Enter your Middle Name: ")
     Last_Name = input("Enter your Last Name: ")
     Username = input("Enter your desired Username: ")
     Email = input("Enter your Email Address: ")
+    Phone_Number = input("Enter your Phone Number: ")
 
     database = connector.connect(host="localhost", user="root",password = "", database = "mybank_register")
     cursor = database.cursor()   
